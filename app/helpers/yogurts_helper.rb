@@ -1,0 +1,2 @@
+module YogurtsHelper
+end

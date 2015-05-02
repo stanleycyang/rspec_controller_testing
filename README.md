@@ -214,7 +214,7 @@ Your tests should all pass now!
 
 	Now knowing what we know with `show`, spend 5 minutes and try and create tests and pass edit!
 	
-#Writing edit together
+##Writing edit together
 
 	describe "GET edit" do
 	    let!(:yogurt){Yogurt.create!(name: "Bang bang", calories: 450)}
@@ -289,7 +289,7 @@ Add these tests
 Create your `create` action
 
 	def create
-	    @yogurt = Yogurt.new(params.require(:yogurt).permit(:name, :calories))
+	    @yogurt = Yogurt.new(yogurt_params)
 	
 	    if @yogurt.save
 	      redirect_to yogurts_path
@@ -298,9 +298,117 @@ Create your `create` action
 	    end
 	  end
 
+	private
+
+    def yogurt_params
+      params.require(:yogurt).permit(:name, :calories)
+    end	  
+
 You now have to validate your model
 
 	class Yogurt < ActiveRecord::Base
 	  validates_presence_of :name, :calories
 	  validates_numericality_of :calories
 	end
+
+In your terminal, run
+
+	$ rspec spec/controllers/yogurts_controller_spec.rb
+
+Your tests should all pass now!
+
+##Update tests
+
+	describe 'PUT update' do
+	    let!(:yogurt){Yogurt.create!(name: "Sweet Bear", calories: 350)}
+	
+	    context "update with valid attributes" do
+	      let!(:valid_attributes) do
+	        {
+	          name: "Mandy Moore",
+	          calories: 450
+	        }
+	      end
+	
+	      it "updates the existing yogurt" do
+	        put :update, id: yogurt.id, yogurt: valid_attributes
+	        expect(yogurt.reload.name).to eq(valid_attributes[:name])
+	      end
+	
+	      it "redirects to the index" do
+	        put :update, id: yogurt.id, yogurt: valid_attributes
+	        expect(response).to redirect_to yogurts_path
+	      end
+	
+	    end
+	
+	    context "update with bad attributes" do
+	      let(:invalid_attributes) do
+	        {
+	          name:nil,
+	          calories:nil
+	        }
+	      end
+	
+	      it "does not update the existing yogurt" do
+	        put :update, id: yogurt.id, yogurt: invalid_attributes
+	        expect(yogurt.reload.name).to eq(yogurt.name)
+	      end
+	
+	      it "renders the edit view file" do
+	        put :update, id: yogurt.id, yogurt: invalid_attributes
+	        expect(response).to render_template :edit
+	      end
+	
+	    end
+	
+	  end
+
+Pass the tests!
+
+	def update
+	    @yogurt = Yogurt.find(params[:id])
+	
+	    if @yogurt.update(yogurt_params)
+	      redirect_to yogurts_path
+	    else
+	      render :edit
+	    end
+	  end
+
+In your terminal, run
+
+	$ rspec spec/controllers/yogurts_controller_spec.rb
+
+Your tests should all pass now!
+
+##Destroy Tests
+
+Let's write tests for destroy
+
+	describe 'DELETE destroy' do
+	    let!(:yogurt){Yogurt.create!(name: 'Happy feet', calories: 500)}
+	
+	    it "should assign the yogurt to a variable yogurt" do
+	      delete :destroy, id: yogurt.id
+	      expect(assigns(:yogurt)).to eq(yogurt)
+	    end
+	
+	    it "should destroy a yogurt record" do
+	      expect{delete :destroy, id: yogurt.id}.to change(Yogurt, :count).by(-1)
+	    end
+	  end
+
+Then, pass the tests
+
+	def destroy
+	    @yogurt = Yogurt.find(params[:id])
+	    @yogurt.destroy
+	    redirect_to yogurts_path
+	  end	
+
+In your terminal, run
+
+	$ rspec spec/controllers/yogurts_controller_spec.rb
+
+Your tests should all pass now!
